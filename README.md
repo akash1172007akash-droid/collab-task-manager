@@ -1,5 +1,12 @@
 # CollabTask MVP - Real-time Collaborative Task & Project Management
 
+[![Build & Deploy](https://github.com/akash1172007akash-droid/collab-task-manager/actions/workflows/deploy.yml/badge.svg)](https://github.com/akash1172007akash-droid/collab-task-manager/actions/workflows/deploy.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?style=flat&logo=github)](https://akash1172007akash-droid.github.io/collab-task-manager/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-black?style=flat&logo=github)](https://github.com/akash1172007akash-droid/collab-task-manager)
+
+> 🌐 **Live URL:** [https://akash1172007akash-droid.github.io/collab-task-manager/](https://akash1172007akash-droid.github.io/collab-task-manager/)  
+> 📂 **Source Code:** [https://github.com/akash1172007akash-droid/collab-task-manager](https://github.com/akash1172007akash-droid/collab-task-manager)
+
 A real-time collaborative project and task management MVP built with React 19, TypeScript, Tailwind CSS, and Firebase (Authentication & Cloud Firestore).
 
 ---
