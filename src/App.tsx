@@ -10,12 +10,14 @@ import { TaskBoard } from './components/TaskBoard';
 import { CreateProjectModal } from './components/CreateProjectModal';
 import { AddMemberModal } from './components/AddMemberModal';
 import { CreateTaskModal } from './components/CreateTaskModal';
+import { FirebaseConfigModal } from './components/FirebaseConfigModal';
 
 const MainLayout: React.FC = () => {
   const { currentUser, loading } = useAuth();
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
   if (loading) {
     return (
@@ -31,11 +33,11 @@ const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
       <Navbar />
-      <FirebaseBanner />
+      <FirebaseBanner onOpenSettings={() => setIsConfigModalOpen(true)} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {!currentUser ? (
-          <AuthView />
+          <AuthView onOpenConfig={() => setIsConfigModalOpen(true)} />
         ) : (
           <div className="space-y-6">
             {/* Project Header (Selector, Members, Actions) */}
@@ -66,6 +68,10 @@ const MainLayout: React.FC = () => {
       <CreateTaskModal
         isOpen={isCreateTaskOpen}
         onClose={() => setIsCreateTaskOpen(false)}
+      />
+      <FirebaseConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
       />
     </div>
   );

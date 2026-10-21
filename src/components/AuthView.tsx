@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Mail, User, ArrowRight, UserPlus, LogIn, AlertCircle } from 'lucide-react';
+import { isLiveConfigAvailable, isUsingEmulator } from '../lib/firebase';
+import { Lock, Mail, User, ArrowRight, UserPlus, LogIn, AlertCircle, Settings } from 'lucide-react';
 
-export const AuthView: React.FC = () => {
+interface AuthViewProps {
+  onOpenConfig?: () => void;
+}
+
+export const AuthView: React.FC<AuthViewProps> = ({ onOpenConfig }) => {
   const { loginUser, registerUser } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; isNetwork?: boolean } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,16 +36,28 @@ export const AuthView: React.FC = () => {
     } catch (err: any) {
       console.error('Authentication error:', err);
       let msg = err.message || 'Authentication failed';
-      if (err.code === 'auth/email-already-in-use') {
-        msg = 'An account with this email already exists. Please log in.';
+      let isNetwork = false;
+
+      if (err.code === 'auth/network-request-failed') {
+        isNetwork = true;
+        if (isLiveConfigAvailable) {
+          msg = 'Cannot connect to Firebase. Please check your internet connection or verify your Firebase project credentials in Settings.';
+        } else if (isUsingEmulator) {
+          msg = 'Cannot connect to local Firebase Emulator at 127.0.0.1:9099. Make sure "npm run emulator" is running in your terminal, or click "Connect Firebase" to use your live cloud project.';
+        } else {
+          msg = 'Firebase credentials not configured yet. Click "Connect Firebase" to enter your Firebase project keys.';
+        }
+      } else if (err.code === 'auth/email-already-in-use') {
+        msg = 'An account with this email already exists. Please switch to Sign In.';
       } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-        msg = 'Invalid email or password.';
+        msg = 'Invalid credentials. If you haven\'t created this account yet, please click "Create Account" above to register it first.';
       } else if (err.code === 'auth/user-not-found') {
-        msg = 'No account found with this email. Please register first.';
+        msg = 'No account found with this email. Please click "Create Account" above to register.';
       } else if (err.code === 'auth/weak-password') {
         msg = 'Password should be at least 6 characters.';
       }
-      setError(msg);
+
+      setError({ message: msg, isNetwork });
     } finally {
       setLoading(false);
     }
@@ -60,7 +77,7 @@ export const AuthView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-100px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-8 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -111,9 +128,24 @@ export const AuthView: React.FC = () => {
 
         {/* Error notification */}
         {error && (
-          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <div className="flex-1">{error}</div>
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-2">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+              <div className="flex-1 font-medium leading-relaxed">{error.message}</div>
+            </div>
+
+            {error.isNetwork && onOpenConfig && (
+              <div className="pt-2 border-t border-rose-200/60 flex justify-end">
+                <button
+                  type="button"
+                  onClick={onOpenConfig}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-xs transition cursor-pointer shadow-xs"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>Configure Firebase Credentials</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -210,6 +242,9 @@ export const AuthView: React.FC = () => {
               Fill User 2 (Bob)
             </button>
           </div>
+          <p className="text-[10px] text-slate-400 text-center mt-1.5">
+            Note: On a new Firebase database, register via <strong>"Create Account"</strong> first.
+          </p>
         </div>
       </div>
     </div>
