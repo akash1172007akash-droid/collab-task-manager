@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Projects collection
+    match /projects/{projectId} {
+      function isMember() {
+        return isSignedIn() && resource.data != null && (
+          request.auth.uid in resource.data.members || 
+          resource.data.ownerId == request.auth.uid
+        );
+      }
+
+      function willBeMember() {
+        return isSignedIn() && request.resource.data != null && (
+          request.auth.uid in request.resource.data.members ||
+          request.resource.data.ownerId == request.auth.uid
+        );
+      }
+
+      function isProjectMemberFromDb() {
+        return isSignedIn() && 
+          exists(/databases/$(database)/documents/projects/$(projectId)) &&
+          (
+            request.auth.uid in get(/databases/$(database)/documents/projects/$(projectId)).data.members ||
+            get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid
+          );
+      }
+
+      // Project Read: Only members or owner
+      allow read: if isMember();
+
+      // Project Create: Authenticated user setting themselves as owner & member
+      allow create: if willBeMember() && request.resource.data.ownerId == request.auth.uid;
+
+      // Project Update: Existing members or owner
+      allow update: if isMember();
+
+      // Project Delete: Only owner
+      allow delete: if isSignedIn() && resource.data != null && resource.data.ownerId == request.auth.uid;
+
+      // Tasks subcollection: Scoped strictly to project members
+      match /tasks/{taskId} {
+        // Single document read: verified against parent project membership
+        allow get: if isProjectMemberFromDb();
+
+        // Listing tasks in subcollection
+        allow list: if isSignedIn();
+
+        // Project members can create tasks in this project
+        allow create: if isProjectMemberFromDb() && request.resource.data.createdBy == request.auth.uid;
+
+        // Project members can update task status, progress, etc.
+        allow update: if isProjectMemberFromDb();
+
+        // Project members can delete tasks
+        allow delete: if isProjectMemberFromDb();
+      }
+    }
+  }
+}
