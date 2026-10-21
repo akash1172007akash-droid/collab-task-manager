@@ -14,7 +14,17 @@ export interface FirebaseCustomConfig {
 const STORAGE_KEY = 'COLAB_TASK_FIREBASE_CONFIG';
 const EMULATOR_STORAGE_KEY = 'COLAB_TASK_USE_EMULATOR';
 
-// Helper to read stored custom config
+// Project credentials default for exp-12a-firebase
+const DEFAULT_FIREBASE_CONFIG: FirebaseCustomConfig = {
+  apiKey: 'AIzaSyBoYDrNtDF767iW048wkDq5jaUNUuy_jtU',
+  authDomain: 'exp-12a-firebase.firebaseapp.com',
+  projectId: 'exp-12a-firebase',
+  storageBucket: 'exp-12a-firebase.firebasestorage.app',
+  messagingSenderId: '179623555194',
+  appId: '1:179623555194:web:5dc02a998062f6081b4bc3',
+};
+
+// Helper to read stored custom config from localStorage
 export function getStoredFirebaseConfig(): FirebaseCustomConfig | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -44,10 +54,8 @@ export function clearStoredFirebaseConfig(): void {
 
 export function getIsEmulatorPreferred(): boolean {
   if (typeof window === 'undefined') return false;
-  // If explicitly set in localStorage
   const stored = localStorage.getItem(EMULATOR_STORAGE_KEY);
   if (stored !== null) return stored === 'true';
-  // Or if set in vite env
   return import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true';
 }
 
@@ -74,8 +82,6 @@ const isEnvConfigValid = Boolean(
   envProjectId !== 'your_project_id'
 );
 
-export const isLiveConfigAvailable = Boolean(storedConfig || isEnvConfigValid);
-
 // Determine host environment
 const isLocalhost = typeof window !== 'undefined' && (
   window.location.hostname === 'localhost' ||
@@ -84,8 +90,10 @@ const isLocalhost = typeof window !== 'undefined' && (
 );
 
 export const isUsingEmulator = Boolean(
-  isLocalhost && (getIsEmulatorPreferred() || !isLiveConfigAvailable)
+  isLocalhost && getIsEmulatorPreferred()
 );
+
+export const isLiveConfigAvailable = true;
 
 // Resolved config object
 export const resolvedFirebaseConfig = storedConfig || (isEnvConfigValid ? {
@@ -95,14 +103,7 @@ export const resolvedFirebaseConfig = storedConfig || (isEnvConfigValid ? {
   storageBucket: envStorageBucket,
   messagingSenderId: envMessagingSenderId,
   appId: envAppId,
-} : {
-  apiKey: 'demo-task-manager-api-key',
-  authDomain: 'demo-task-manager.firebaseapp.com',
-  projectId: 'demo-task-manager',
-  storageBucket: 'demo-task-manager.appspot.com',
-  messagingSenderId: '1234567890',
-  appId: '1:1234567890:web:abcdef123456',
-});
+} : DEFAULT_FIREBASE_CONFIG);
 
 // Initialize Firebase App singleton
 export const app = getApps().length === 0 ? initializeApp(resolvedFirebaseConfig) : getApp();
